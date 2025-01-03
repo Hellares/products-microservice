@@ -12,5 +12,5 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/products
 PORT=3000
 ```
 
-4.Ejecutar migracion de prisma `npx prisma migrate dev`
-5.Ejecutar microservicio `npm run start:dev`
+4. Ejecutar migracion de prisma `npx prisma migrate dev`
+5. Ejecutar microservicio `npm run start:dev`
