@@ -8,6 +8,7 @@ export const CONSOLE_COLORS = {
       MAGENTA: '\x1b[35m',
       CYAN: '\x1b[36m',
       WHITE: '\x1b[37m',
+      FUCHSIA: '\x1b[38;5;198m'
     },
     // Colores de fondo
     BG: {

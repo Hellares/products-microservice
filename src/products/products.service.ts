@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaClient } from '@prisma/client';
 import { CONSOLE_COLORS } from 'src/common/constants/colors.constants';
 import { PaginationDto } from 'src/common';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit{
@@ -12,7 +13,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit{
 
   async onModuleInit() {
     await this.$connect();
-    this.logger.log(`${CONSOLE_COLORS.STYLE.UNDERSCORE}${CONSOLE_COLORS.TEXT.CYAN}Connected to database`);
+    this.logger.log(`${CONSOLE_COLORS.TEXT.CYAN}Connected to database`);
   }
   create(createProductDto: CreateProductDto) {
     return this.product.create({
@@ -40,17 +41,51 @@ export class ProductsService extends PrismaClient implements OnModuleInit{
     }
   }
 
-  async findOne(id: number) {
+  // async findOne(id: number) {
 
-    const product = await this.product.findFirst({
-      where: {id, available: true},
-    });
+  //   const product = await this.product.findFirst({
+  //     where: {id, available: true},
+  //   });
 
-    if (!product) {
-      throw new NotFoundException(`Producto con id #${id} no encontrado`);
+  //   if (!product) {
+  //     throw new RpcException(`Producto con id #${id} no encontrado`);
+  //   }
+
+  //   return product;
+  // }
+
+  async findOne(identifier: number | string) {
+    try {
+      const product = await this.product.findFirst({
+        where: {
+          OR: [
+            { id: typeof identifier === 'number' ? identifier : undefined },
+            { codigo: typeof identifier === 'string' ? identifier : undefined }
+          ],
+          available: true
+        }
+      });
+  
+      if (!product) {
+        throw new RpcException({
+          status: HttpStatus.NOT_FOUND, // 404
+          message: 'Producto no encontrado'
+        });
+      }
+  
+      return product;
+  
+    } catch (error) {
+      // Si ya es un RpcException (como el caso de no encontrado), lo retornamos
+      if (error instanceof RpcException) {
+        throw error;
+      }
+      // Para otros errores (como validación)
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST, // 400
+        message: 'Identificador inválido'
+      });
     }
-
-    return product;
   }
 
 
@@ -72,12 +107,6 @@ export class ProductsService extends PrismaClient implements OnModuleInit{
 
     await this.findOne(id); // validamos que exista el producto -- se optimiza con un try catch para evitar llamadas a la base de datos
 
-    // return this.product.delete({
-    //   where: {
-    //     id: id
-    //   }
-    // });
-
     const product = await this.product.update({
       where: {
         id: id
@@ -86,5 +115,6 @@ export class ProductsService extends PrismaClient implements OnModuleInit{
         available: false
       }
     });
+    return product;
   }
 }

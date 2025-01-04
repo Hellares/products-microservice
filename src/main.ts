@@ -14,12 +14,15 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: ["amqp://jtorres:jtorres@localhost:5672"],
+        urls: envs.rabbitmqServers,
         queue: "products_queue",
         queueOptions: {
           durable: true,
         },
         noAck: false,
+        socketOptions: {
+          heartbeat:60,
+        },
       },
     }
   );
@@ -32,6 +35,8 @@ async function bootstrap() {
 
   await app.listen();
 
-  logger.log(`${CONSOLE_COLORS.STYLE.UNDERSCORE}${CONSOLE_COLORS.TEXT.CYAN}Running on port ${envs.port}`);
+  logger.log(`${CONSOLE_COLORS.TEXT.CYAN}Running on port ${envs.port}`);
 }
 bootstrap();
+
+
